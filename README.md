@@ -1,5 +1,7 @@
 # Hermes Agent — One-Click Windows Setup
 
+[English](#hermes-agent--one-click-windows-setup) | [中文](#hermes-agent--windows-一鍵部署)
+
 A self-contained Docker Compose stack that boots a full Hermes Agent environment on **Windows 11 x86-64** with one double-click. Three services: the Hermes gateway + dashboard, a headless browser (Camofox with VNC), and a privacy-respecting search engine (SearXNG). Everything is embedded inside a single `.bat` file — no separate config files to ship, no manual editing.
 
 > **Prerequisite:** [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/) must be installed and running before executing the script.
@@ -60,7 +62,7 @@ To restart: `docker compose up -d`
 
 None of the base images ship ready for this use case out of the box. Every customization below exists to solve a real problem that blocked the stack from working.
 
-### Dockerfile — builds on `nousresearch/hermes-agent:latest`
+### Dockerfile — builds on `nousresearch/hermes-agent:v2026.6.5`
 
 | Change | Reason |
 |--------|--------|
@@ -120,6 +122,8 @@ None of the base images ship ready for this use case out of the box. Every custo
 ---
 
 # Hermes Agent — Windows 一鍵部署
+
+[English](#hermes-agent--one-click-windows-setup) | [中文](#hermes-agent--windows-一鍵部署)
 
 一個自包含的 Docker Compose 環境，在 **Windows 11 x86-64** 上點兩下就能啟動完整的 Hermes Agent 系統。包含三個服務：Hermes 閘道器 + 儀表板、無頭瀏覽器（Camofox + VNC 遠端桌面），以及尊重隱私的搜尋引擎（SearXNG）。所有設定檔都內嵌在單一 `.bat` 檔案中 — 不需要另外附帶其他設定檔，也不需要手動編輯。
 
@@ -181,7 +185,7 @@ None of the base images ship ready for this use case out of the box. Every custo
 
 基礎映像檔都不會針對這個使用情境預先設定好。以下每一項客製化都是為了解決一個實際會阻礙系統運作的問題。
 
-### Dockerfile — 基於 `nousresearch/hermes-agent:latest` 構建
+### Dockerfile — 基於 `nousresearch/hermes-agent:v2026.6.5` 構建
 
 | 變更 | 原因 |
 |--------|--------|
