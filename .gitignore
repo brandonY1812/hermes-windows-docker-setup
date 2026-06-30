@@ -2,11 +2,8 @@
 hermes_data/
 searxng/
 
-# Extracted files (generated at runtime from base64)
-docker-compose.yml
-Dockerfile
-Dockerfile.camofox
-.dockerignore
+# Downloaded/extracted during Docker build
+camofox-browser/
 
 # OS junk
 Thumbs.db

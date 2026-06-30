@@ -1,0 +1,87 @@
+# =============================================================================
+# Hermes + Camofox + SearXNG Docker Compose Stack
+# =============================================================================
+# Services:
+#   hermes   — Hermes Agent (gateway + dashboard on port 9119)
+#   camofox  — Browser automation engine (CDP on 9377, VNC on 6080)
+#   searxng  — Privacy-respecting search engine (web UI on 8888)
+#
+# All services share a bridge network (hermes_net) and persist data under
+# .\hermes_data\ and .\searxng\ on the Windows host.
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Hermes Agent — the AI agent runtime with web dashboard
+  # ---------------------------------------------------------------------------
+  hermes:
+    build: .
+    container_name: hermes
+    restart: unless-stopped
+    mem_limit: 4g                # Limit memory to 4 GB
+    cpus: 2.0                    # Limit to 2 CPU cores
+    stdin_open: true             # Needed for interactive terminal sessions
+    tty: true
+    command: ["gateway", "run"]  # Start gateway + dashboard in one process
+    ports:
+      - "9119:9119"              # Dashboard (HTTP)
+    environment:
+      - HERMES_HOME=/opt/data                            # Persistence root inside container
+      - HERMES_DASHBOARD=1                               # Enable web dashboard
+      - HERMES_DASHBOARD_BASIC_AUTH_USERNAME=admin       # Basic auth username for dashboard
+      - HERMES_DASHBOARD_BASIC_AUTH_PASSWORD=admin       # Basic auth password (change in production!)
+    volumes:
+      - .\hermes_data\.hermes:/opt/data                  # Agent state: config, skills, memories, cron
+      - .\hermes_data\downloads:/opt/downloads           # Shared downloads folder
+    networks:
+      - hermes_net
+    depends_on:
+      camofox:
+        condition: service_started
+      searxng:
+        condition: service_started
+
+  # ---------------------------------------------------------------------------
+  # Camofox — headless browser with VNC (for visual debugging)
+  # ---------------------------------------------------------------------------
+  camofox:
+    build:
+      context: .                        # Build context: repo root
+      dockerfile: Dockerfile.camofox    # Custom Dockerfile (adds noVNC + reconnect)
+    container_name: camofox
+    restart: unless-stopped
+    ports:
+      - "9377:9377"                     # CDP (Chrome DevTools Protocol)
+      - "6080:6080"                     # noVNC web client (visual browser debug)
+    environment:
+      - ENABLE_VNC=1                    # Turn on the built-in VNC plugin
+      - CAMOFOX_PORT=9377               # CDP listen port
+      - VNC_BIND=0.0.0.0                # Bind VNC to all interfaces (Docker mapping)
+      - VNC_RESOLUTION=1920x1080        # Browser viewport resolution
+      - CAMOFOX_HEADLESS=virtual        # Use Xvfb virtual display
+    volumes:
+      - .\hermes_data\.camofox-docker:/root/.camofox    # Browser profile + sessions
+      - .\hermes_data\downloads:/tmp                    # Shared downloads (maps to Hermes)
+    networks:
+      - hermes_net
+
+  # ---------------------------------------------------------------------------
+  # SearXNG — privacy meta-search engine
+  # ---------------------------------------------------------------------------
+  searxng:
+    image: searxng/searxng:2026.6.29-28d388576
+    container_name: searxng
+    restart: unless-stopped
+    ports:
+      - "8888:8080"                     # Web UI (host:container)
+    volumes:
+      - .\searxng:/etc/searxng:rw       # Persist settings across restarts
+    networks:
+      - hermes_net
+
+# ---------------------------------------------------------------------------
+# Shared bridge network so services can reach each other by container name
+# ---------------------------------------------------------------------------
+networks:
+  hermes_net:
+    driver: bridge

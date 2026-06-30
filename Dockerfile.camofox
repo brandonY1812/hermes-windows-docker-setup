@@ -1,0 +1,38 @@
+# =============================================================================
+# Camofox + noVNC Dockerfile
+# =============================================================================
+# Extends the official Camofox browser image with:
+#   - x11vnc + noVNC for visual browser debugging (port 6080)
+#   - Auto-reconnect on disconnect (built into noVNC v1.3.0's full client)
+#   - vnc_auto.html symlink so old URL references still work
+#   - vnc_lite.html also patched for reconnect (fallback)
+# =============================================================================
+
+FROM ghcr.io/jo-inc/camofox-browser:1.11.2
+
+# Install VNC + noVNC dependencies (Debian Bookworm package names)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    x11vnc \
+    python3-websockify \
+    novnc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Flip vnc plugin from disabled to enabled in config
+# (ENABLE_VNC env var is NOT checked when plugin is listed with enabled:false)
+RUN sed -i 's/"vnc": { "enabled": false/"vnc": { "enabled": true/' camofox.config.json
+
+# Patch the lite version with reconnect support (fallback)
+COPY patch-novnc.py /tmp/patch-novnc.py
+RUN python3 /tmp/patch-novnc.py && rm /tmp/patch-novnc.py
+
+# Symlink vnc_auto.html to the full vnc.html (which has the left-hand toolbar + built-in reconnect)
+# (modern noVNC dropped vnc_auto.html; symlink keeps old URL working)
+RUN ln -sf vnc.html /usr/share/novnc/vnc_auto.html
+
+# Redirect root to vnc_auto.html with reconnect enabled
+COPY index.html /usr/share/novnc/index.html
+
+# Bind noVNC to all interfaces so Docker port mapping works
+ENV VNC_BIND=0.0.0.0
+
+EXPOSE 6080

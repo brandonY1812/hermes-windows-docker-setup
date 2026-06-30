@@ -79,46 +79,25 @@ if not exist "hermes_data\.hermes\.env" (
 )
 echo.
 
-:: Write files from embedded base64
-
-echo [1/4] Writing docker-compose.yml...
-powershell -NoProfile -Command "[IO.File]::WriteAllBytes('docker-compose.yml', [Convert]::FromBase64String('c2VydmljZXM6CiAgaGVybWVzOgogICAgYnVpbGQ6IC4KICAgIGNvbnRhaW5lcl9uYW1lOiBoZXJtZXMKICAgIHJlc3RhcnQ6IHVubGVzcy1zdG9wcGVkCiAgICBtZW1fbGltaXQ6IDRnCiAgICBjcHVzOiAyLjAKICAgIHN0ZGluX29wZW46IHRydWUKICAgIHR0eTogdHJ1ZQogICAgY29tbWFuZDogWyJnYXRld2F5IiwgInJ1biJdCiAgICBwb3J0czoKICAgICAgLSAiOTExOTo5MTE5IgogICAgZW52aXJvbm1lbnQ6CiAgICAgIC0gSEVSTUVTX0hPTUU9L29wdC9kYXRhCiAgICAgIC0gSEVSTUVTX0RBU0hCT0FSRD0xCiAgICAgIC0gSEVSTUVTX0RBU0hCT0FSRF9JTlNFQ1VSRT0xICMgQnlwYXNzZXMgT0F1dGggcG9ydGFsIGZvciB0cnVzdGVkIGhvc3QgYWNjZXNzCiAgICB2b2x1bWVzOgogICAgICAtIC5caGVybWVzX2RhdGFcLmhlcm1lczovb3B0L2RhdGEKICAgICAgLSAuXGhlcm1lc19kYXRhXGRvd25sb2Fkczovb3B0L2Rvd25sb2FkcwogICAgbmV0d29ya3M6CiAgICAgIC0gaGVybWVzX25ldAogICAgZGVwZW5kc19vbjoKICAgICAgY2Ftb2ZveDoKICAgICAgICBjb25kaXRpb246IHNlcnZpY2Vfc3RhcnRlZAogICAgICBzZWFyeG5nOgogICAgICAgIGNvbmRpdGlvbjogc2VydmljZV9zdGFydGVkCgogIGNhbW9mb3g6CiAgICBidWlsZDoKICAgICAgY29udGV4dDogLiAgICAgICAgICAgICAgICAgICAgICAgICMgU3BlY2lmaWVzIHRoZSBmb2xkZXIgd2hlcmUgdGhlIGZpbGUgbGl2ZXMgKGN1cnJlbnQgZGlyZWN0b3J5KQogICAgICBkb2NrZXJmaWxlOiBEb2NrZXJmaWxlLmNhbW9mb3ggICAgIyBQb2ludHMgZXhwbGljaXRseSB0byB5b3VyIGN1c3RvbSBuYW1lZCBmaWxlCiAgICBjb250YWluZXJfbmFtZTogY2Ftb2ZveAogICAgcmVzdGFydDogdW5sZXNzLXN0b3BwZWQKICAgIHBvcnRzOgogICAgICAtICI5Mzc3OjkzNzciCiAgICAgIC0gIjYwODA6NjA4MCIKICAgIGVudmlyb25tZW50OgogICAgICAtIENBTU9GT1hfUE9SVD05Mzc3CiAgICAgIC0gVk5DX0JJTkQ9MC4wLjAuMAogICAgICAtIFZOQ19SRVNPTFVUSU9OPTE5MjB4MTA4MAogICAgICAtIENBTU9GT1hfSEVBRExFU1M9dmlydHVhbAogICAgdm9sdW1lczoKICAgICAgLSAuXGhlcm1lc19kYXRhXC5jYW1vZm94LWRvY2tlcjovcm9vdC8uY2Ftb2ZveAogICAgICAtIC5caGVybWVzX2RhdGFcZG93bmxvYWRzOi90bXAKICAgIG5ldHdvcmtzOgogICAgICAtIGhlcm1lc19uZXQKCiAgc2VhcnhuZzoKICAgIGltYWdlOiBzZWFyeG5nL3NlYXJ4bmc6bGF0ZXN0CiAgICBjb250YWluZXJfbmFtZTogc2VhcnhuZwogICAgcmVzdGFydDogdW5sZXNzLXN0b3BwZWQKICAgIHBvcnRzOgogICAgICAtICI4ODg4OjgwODAiCiAgICB2b2x1bWVzOgogICAgICAtIC5cc2VhcnhuZzovZXRjL3NlYXJ4bmc6cncKICAgIG5ldHdvcmtzOgogICAgICAtIGhlcm1lc19uZXQKCm5ldHdvcmtzOgogIGhlcm1lc19uZXQ6CiAgICBkcml2ZXI6IGJyaWRnZQo='))"
-if %errorlevel% neq 0 (
-    echo [ERROR] Failed to write docker-compose.yml
+:: Verify required files (shipped as real files for GitHub, not base64-embedded)
+echo Verifying setup files...
+if not exist "docker-compose.yml" (
+    echo [ERROR] docker-compose.yml not found. All repo files must be in the same folder as this script.
     pause
     exit /b 1
 )
-echo [OK] docker-compose.yml written.
-
-echo [2/4] Writing Dockerfile...
-powershell -NoProfile -Command "[IO.File]::WriteAllBytes('Dockerfile', [Convert]::FromBase64String('IyAxLiBQdWxsIHRoZSBvZmZpY2lhbCwgcmVhZHktbWFkZSBwcmUtY29tcGlsZWQgaW1hZ2UgZGlyZWN0bHkKRlJPTSBub3VzcmVzZWFyY2gvaGVybWVzLWFnZW50OnYyMDI2LjYuNQoKIyAyLiBCcmllZmx5IHN3aXRjaCB0byByb290IHRvIGluc3RhbGwgc3lzdGVtLWxldmVsIHBhY2thZ2VzClVTRVIgcm9vdAoKIyAzLiBJbnN0YWxsaW5nIGdsb2JhbGx5IGxldHMgeW91IHJ1biAnc2tpbGxraXQnIGRpcmVjdGx5IGluc3RlYWQgb2YgcmVseWluZyBvbiBucHggZG93bmxvYWRzClJVTiBucG0gaW5zdGFsbCAtZyBza2lsbGtpdEAxLjI0LjAKCiMgWzIwMjYtMDUtMTVdCiMgSW5zdGFsbCBtc210cCBhbmQgQ0EgY2VydGlmaWNhdGVzIChuZWVkZWQgZm9yIFRMUy9HbWFpbCkKUlVOIGFwdC1nZXQgdXBkYXRlICYmIGFwdC1nZXQgaW5zdGFsbCAteSBcCiAgICBtc210cCBcCiAgICBtc210cC1tdGEgXAogICAgY2EtY2VydGlmaWNhdGVzIFwKICAgICYmIHJtIC1yZiAvdmFyL2xpYi9hcHQvbGlzdHMvKgo='))"
-if %errorlevel% neq 0 (
-    echo [ERROR] Failed to write Dockerfile
+if not exist "Dockerfile" (
+    echo [ERROR] Dockerfile not found.
     pause
     exit /b 1
 )
-echo [OK] Dockerfile written.
-
-echo [3/4] Writing Dockerfile.camofox...
-powershell -NoProfile -Command "[IO.File]::WriteAllBytes('Dockerfile.camofox', [Convert]::FromBase64String('RlJPTSBnaGNyLmlvL2pvLWluYy9jYW1vZm94LWJyb3dzZXI6MS4xMS4yCgojIEluc3RhbGwgVk5DICsgbm9WTkMgZGVwZW5kZW5jaWVzIChEZWJpYW4gQm9va3dvcm0gcGFja2FnZSBuYW1lcykKUlVOIGFwdC1nZXQgdXBkYXRlICYmIGFwdC1nZXQgaW5zdGFsbCAteSAtLW5vLWluc3RhbGwtcmVjb21tZW5kcyBcCiAgICB4MTF2bmMgXAogICAgcHl0aG9uMy13ZWJzb2NraWZ5IFwKICAgIG5vdm5jIFwKICAgICYmIHJtIC1yZiAvdmFyL2xpYi9hcHQvbGlzdHMvKgoKIyBGbGlwIHZuYyBwbHVnaW4gZnJvbSBkaXNhYmxlZCB0byBlbmFibGVkIGluIGNvbmZpZwojIChFTkFCTEVfVk5DIGVudiB2YXIgaXMgTk9UIGNoZWNrZWQgd2hlbiBwbHVnaW4gaXMgbGlzdGVkIHdpdGggZW5hYmxlZDpmYWxzZSkKUlVOIHNlZCAtaSAncy8idm5jIjogeyAiZW5hYmxlZCI6IGZhbHNlLyJ2bmMiOiB7ICJlbmFibGVkIjogdHJ1ZS8nIGNhbW9mb3guY29uZmlnLmpzb24KCiMgQmluZCBub1ZOQyB0byBhbGwgaW50ZXJmYWNlcyBzbyBEb2NrZXIgcG9ydCBtYXBwaW5nIHdvcmtzCkVOViBWTkNfQklORD0wLjAuMC4wCgpFWFBPU0UgNjA4MAo='))"
-if %errorlevel% neq 0 (
-    echo [ERROR] Failed to write Dockerfile.camofox
+if not exist "Dockerfile.camofox" (
+    echo [ERROR] Dockerfile.camofox not found.
     pause
     exit /b 1
 )
-echo [OK] Dockerfile.camofox written.
-
-echo [4/4] Writing .dockerignore...
-powershell -NoProfile -Command "[IO.File]::WriteAllBytes('.dockerignore', [Convert]::FromBase64String('Y2Ftb2ZveC1icm93c2VyLwpkaXN0LwouZ2l0LwoqLmJhdAo='))"
-if %errorlevel% neq 0 (
-    echo [ERROR] Failed to write .dockerignore
-    pause
-    exit /b 1
-)
-echo [OK] .dockerignore written.
-
-
-
+echo [OK] All setup files present.
+echo.
 
 :: Build and start
 echo ============================================
@@ -135,7 +114,7 @@ if %errorlevel% equ 0 (
     echo   Dashboard:  http://localhost:9119
     echo   Camofox:    http://localhost:9377
     echo   SearXNG:    http://localhost:8888
-    echo   Camofox VNC: http://localhost:6080
+    echo   Camofox VNC: http://localhost:6080/vnc_auto.html?autoconnect=true^&reconnect=true
     echo.
     echo   IMPORTANT: Edit hermes_data\.hermes\.env with your real API key.
     echo ============================================

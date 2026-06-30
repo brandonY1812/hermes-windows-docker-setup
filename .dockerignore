@@ -1,0 +1,10 @@
+# =============================================================================
+# .dockerignore — files excluded from Docker build context
+# =============================================================================
+# These files/directories are NOT sent to the Docker daemon during build,
+# which keeps the build context small and prevents leaking sensitive data.
+
+camofox-browser/    # Binary downloads — not needed at build time
+dist/                # Build artifacts — rebuilt inside the image
+.git/                # Git history — irrelevant to the container
+*.bat                # Windows batch scripts — not used inside Linux containers
