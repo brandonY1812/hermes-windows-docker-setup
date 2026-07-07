@@ -32,6 +32,10 @@ RUN ln -sf vnc.html /usr/share/novnc/vnc_auto.html
 # Redirect root to vnc_auto.html with reconnect enabled
 COPY index.html /usr/share/novnc/index.html
 
+# Override the base image's vnc-watcher.sh with the fixed version
+# (fixes: x11vnc not re-attaching when it dies on the same display)
+COPY vnc-watcher.sh /app/plugins/vnc/vnc-watcher.sh
+
 # Bind noVNC to all interfaces so Docker port mapping works
 ENV VNC_BIND=0.0.0.0
 
