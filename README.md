@@ -117,8 +117,6 @@ None of the base images ship ready for this use case out of the box. Every custo
 ├── Dockerfile.camofox     ← Camofox + noVNC image customizations
 ├── .dockerignore          ← Files excluded from Docker build context
 ├── index.html             ← noVNC landing page (auto-reconnect)
-├── patch-novnc.py         ← Patches noVNC for auto-reconnect
-├── vnc-watcher.sh         ← VNC connection watcher script
 ├── hermes_data/           ← Created at runtime (persistent data)
 │   └── .hermes/
 │       ├── config.yaml
@@ -248,8 +246,6 @@ None of the base images ship ready for this use case out of the box. Every custo
 ├── Dockerfile.camofox     ← Camofox + noVNC 映像客製化
 ├── .dockerignore          ← Docker 建置時排除的檔案
 ├── index.html             ← noVNC 登陸頁面（自動重連）
-├── patch-novnc.py         ← 修補 noVNC 以支援自動重連
-├── vnc-watcher.sh         ← VNC 連線監控腳本
 ├── hermes_data/           ← 執行時產生（持久化資料）
 │   └── .hermes/
 │       ├── config.yaml
