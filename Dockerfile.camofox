@@ -6,24 +6,8 @@
 #   - Auto-reconnect on disconnect (built into noVNC v1.3.0's full client)
 # =============================================================================
 
-FROM ghcr.io/jo-inc/camofox-browser:1.11.2
-
-# Install VNC + noVNC dependencies (Debian Bookworm package names)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    x11vnc \
-    python3-websockify \
-    novnc \
-    && rm -rf /var/lib/apt/lists/*
-
-# Flip vnc plugin from disabled to enabled in config
-# (ENABLE_VNC env var is NOT checked when plugin is listed with enabled:false)
-RUN sed -i 's/"vnc": { "enabled": false/"vnc": { "enabled": true/' camofox.config.json
+FROM ghcr.io/jo-inc/camofox-browser:1.13.0
 
 # Use the full vnc.html client (has toolbar + built-in reconnect)
 # Redirect root to vnc.html with reconnect enabled (autoconnect not supported via query param on full client)
 COPY index.html /usr/share/novnc/index.html
-
-# Bind noVNC to all interfaces so Docker port mapping works
-ENV VNC_BIND=0.0.0.0
-
-EXPOSE 6080

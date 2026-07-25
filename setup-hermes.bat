@@ -30,50 +30,31 @@ if not exist "hermes_data\.camofox-docker" mkdir "hermes_data\.camofox-docker"
 if not exist "hermes_data\downloads" mkdir "hermes_data\downloads"
 if not exist "searxng" mkdir "searxng"
 
-:: Create default config.yaml (prevents first-time setup wizard crash in Docker)
+:: Copy config.yaml and .env from repo root to hermes_data/.hermes/
 if not exist "hermes_data\.hermes\config.yaml" (
-    echo Creating default config.yaml...
-    (
-		echo approvals:
-		echo   mode: smart
-        echo web:
-        echo   backend: searxng
-        echo   search_backend: searxng
-        echo   use_gateway: false
-        echo browser:
-        echo   inactivity_timeout: 120
-        echo   command_timeout: 30
-        echo   record_sessions: false
-        echo   allow_private_urls: false
-        echo   engine: auto
-        echo   auto_local_for_private_urls: true
-        echo   cdp_url: ''
-        echo   dialog_policy: must_respond
-        echo   dialog_timeout_s: 300
-        echo   camofox:
-        echo     managed_persistence: true
-        echo     user_id: shared-camofox
-        echo     session_key: visible-tab
-        echo     adopt_existing_tab: true
-        echo     rewrite_loopback_urls: false
-        echo     loopback_host_alias: host.docker.internal
-        echo   cloud_provider: camofox
-        echo   use_gateway: false
-    ) > "hermes_data\.hermes\config.yaml"
-    echo [OK] config.yaml created.
+    echo Copying config.yaml...
+    copy "config.yaml" "hermes_data\.hermes\config.yaml" >nul
+    if %errorlevel% equ 0 (
+        echo [OK] config.yaml copied.
+    ) else (
+        echo [ERROR] Failed to copy config.yaml
+        pause
+        exit /b 1
+    )
 ) else (
     echo [SKIP] config.yaml already exists.
 )
 
-:: Create placeholder .env (prevents startup failures)
 if not exist "hermes_data\.hermes\.env" (
-    echo Creating placeholder .env...
-    (
-        echo CAMOFOX_URL=http://camofox:9377
-		echo SEARXNG_URL=http://searxng:8080
-        echo.
-    ) > "hermes_data\.hermes\.env"
-    echo [OK] .env created
+    echo Copying .env...
+    copy ".env" "hermes_data\.hermes\.env" >nul
+    if %errorlevel% equ 0 (
+        echo [OK] .env copied.
+    ) else (
+        echo [ERROR] Failed to copy .env
+        pause
+        exit /b 1
+    )
 ) else (
     echo [SKIP] .env already exists.
 )
@@ -93,6 +74,16 @@ if not exist "Dockerfile" (
 )
 if not exist "Dockerfile.camofox" (
     echo [ERROR] Dockerfile.camofox not found.
+    pause
+    exit /b 1
+)
+if not exist "config.yaml" (
+    echo [ERROR] config.yaml not found.
+    pause
+    exit /b 1
+)
+if not exist ".env" (
+    echo [ERROR] .env not found.
     pause
     exit /b 1
 )
