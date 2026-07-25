@@ -64,7 +64,7 @@ To restart: `docker compose up -d`
 
 None of the base images ship ready for this use case out of the box. Every customization below exists to solve a real problem that blocked the stack from working.
 
-### Dockerfile — builds on `nousresearch/hermes-agent:v2026.6.19`
+### Dockerfile — builds on `nousresearch/hermes-agent:v2026.7.20`
 
 | Change | Reason |
 |--------|--------|
@@ -72,20 +72,17 @@ None of the base images ship ready for this use case out of the box. Every custo
 | `apt-get install msmtp msmtp-mta ca-certificates` | The agent sends email notifications (e.g. cron job results) via Gmail SMTP. msmtp is the sendmail-compatible relay; ca-certificates provides TLS trust. |
 | `rm -rf /var/lib/apt/lists/*` | Shrinks the image layer by cleaning apt package lists after install. |
 
-### Dockerfile.camofox — builds on `ghcr.io/jo-inc/camofox-browser:1.11.2`
+### Dockerfile.camofox — builds on `ghcr.io/jo-inc/camofox-browser:1.13.0`
 
 | Change | Reason |
 |--------|--------|
-| `apt-get install x11vnc python3-websockify novnc` | Adds remote desktop access to the headless browser so you can see what the agent is doing. No GUI on the Docker host, so VNC is the only way to inspect the browser visually. |
-| `sed` to enable VNC plugin in `camofox.config.json` | VNC plugin is listed as `enabled: false` in the base image config. The `ENABLE_VNC` env var is **not checked** when the plugin is listed with `enabled: false` — it must be flipped to `true` in the JSON. |
-| `ENV VNC_BIND=0.0.0.0` | Default VNC bind is `127.0.0.1` (localhost only). Docker port mapping requires binding to `0.0.0.0` (all interfaces) for external access. |
-| `EXPOSE 6080` | noVNC web client port. |
+| `COPY index.html /usr/share/novnc/index.html` | Uses the full vnc.html client which has built-in toolbar + auto-reconnect. Root redirects to vnc.html. |
 
 ### docker-compose.yml — pinned images for stability
 
 | Change | Reason |
 |--------|--------|
-| Hermes image pinned to `v2026.6.19` | Uses a specific tag instead of `latest` to avoid breaking changes from future image updates. |
+| Hermes image pinned to `v2026.7.20` | Uses a specific tag instead of `latest` to avoid breaking changes from future image updates. |
 | SearXNG image pinned to `2026.6.29-28d388576` | Same reason — a specific, tested version avoids surprise breakage. |
 | `HERMES_DASHBOARD_BASIC_AUTH_USERNAME/PASSWORD` | Secures the dashboard with basic auth (change the password in production). |
 | `mem_limit: 4g` / `cpus: 2.0` | Caps resource usage so Docker doesn't starve the Windows host. |
@@ -115,6 +112,8 @@ None of the base images ship ready for this use case out of the box. Every custo
 ├── docker-compose.yml     ← Docker Compose service definitions
 ├── Dockerfile             ← Hermes Agent image customizations
 ├── Dockerfile.camofox     ← Camofox + noVNC image customizations
+├── config.yaml            ← Hermes Agent configuration (copied to hermes_data/.hermes/)
+├── .env                   ← Environment variables (copied to hermes_data/.hermes/)
 ├── .dockerignore          ← Files excluded from Docker build context
 ├── index.html             ← noVNC landing page (auto-reconnect)
 ├── hermes_data/           ← Created at runtime (persistent data)
@@ -193,7 +192,7 @@ None of the base images ship ready for this use case out of the box. Every custo
 
 基礎映像檔都不會針對這個使用情境預先設定好。以下每一項客製化都是為了解決一個實際會阻礙系統運作的問題。
 
-### Dockerfile — 基於 `nousresearch/hermes-agent:v2026.6.19` 構建
+### Dockerfile — 基於 `nousresearch/hermes-agent:v2026.7.20` 構建
 
 | 變更 | 原因 |
 |--------|--------|
@@ -201,20 +200,17 @@ None of the base images ship ready for this use case out of the box. Every custo
 | `apt-get install msmtp msmtp-mta ca-certificates` | Agent 需要透過 Gmail SMTP 發送郵件通知（例如 cron 排程的執行結果）。msmtp 是相容 sendmail 的郵件轉發工具；ca-certificates 提供 TLS 信任鏈。 |
 | `rm -rf /var/lib/apt/lists/*` | 安裝後清除 apt 套件清單，縮小映像層大小。 |
 
-### Dockerfile.camofox — 基於 `ghcr.io/jo-inc/camofox-browser:1.11.2` 構建
+### Dockerfile.camofox — 基於 `ghcr.io/jo-inc/camofox-browser:1.13.0` 構建
 
 | 變更 | 原因 |
 |--------|--------|
-| `apt-get install x11vnc python3-websockify novnc` | 為無頭瀏覽器加入遠端桌面功能，讓你可以看到 Agent 正在瀏覽什麼。Docker 主機沒有 GUI，VNC 是唯一能視覺化檢查瀏覽器的方法。 |
-| `sed` 啟用 `camofox.config.json` 中的 VNC 外掛 | VNC 外掛在基礎映像的設定中被列為 `enabled: false`。`ENABLE_VNC` 環境變數在外掛被標記為 `enabled: false` 時**不會被檢查** — 必須先在 JSON 設定中改為 `true`。 |
-| `ENV VNC_BIND=0.0.0.0` | 預設 VNC 綁定位址是 `127.0.0.1`（僅本機）。Docker 埠號對應需要綁定到 `0.0.0.0`（所有網路介面）才能從外部存取。 |
-| `EXPOSE 6080` | noVNC 網頁客戶端埠號。 |
+| `COPY index.html /usr/share/novnc/index.html` | 使用完整的 vnc.html 客戶端，內建工具列與自動重連功能。根路徑重導向到 vnc.html。 |
 
 ### docker-compose.yml — 固定映像版本以確保穩定性
 
 | 變更 | 原因 |
 |--------|--------|
-| Hermes 映像固定為 `v2026.6.19` | 使用特定標籤而非 `latest`，避免未來映像更新造成相容性問題。 |
+| Hermes 映像固定為 `v2026.7.20` | 使用特定標籤而非 `latest`，避免未來映像更新造成相容性問題。 |
 | SearXNG 映像固定為 `2026.6.29-28d388576` | 同樣原因 — 使用經測試的特定版本，避免意外故障。 |
 | `HERMES_DASHBOARD_BASIC_AUTH_USERNAME/PASSWORD` | 以基本驗證保護儀表板（請在正式環境中修改密碼）。 |
 | `mem_limit: 4g` / `cpus: 2.0` | 限制資源用量，避免 Docker 佔滿 Windows 主機的資源。 |
@@ -228,10 +224,9 @@ None of the base images ship ready for this use case out of the box. Every custo
 
 | 變更 | 原因 |
 |--------|--------|
-| 所有設定檔以真實檔案提供 | docker-compose.yml、Dockerfile、Dockerfile.camofox 都是 repo 中的一般檔案 — 不需要在執行時解碼 base64。下載後直接點兩下即可。 |
-| 啟動時驗證必要檔案 | 檢查三個必要檔案（docker-compose.yml、Dockerfile、Dockerfile.camofox）是否存在。如果遺失會快速失敗並顯示清楚的錯誤訊息。 |
-| 自動產生 `config.yaml` | 防止首次啟動設定精靈在 Docker 中崩潰。將 approvals 模式設為 `smart`，讓指令根據啟發式規則自動核准，免去手動確認。同時將 camofox 設為瀏覽器雲端供應商，配置 managed persistence、visible-tab 工作階段處理及適當的逾時設定 — 讓無頭瀏覽器開箱即用。 |
-| 自動產生 `.env`，包含 `CAMOFOX_URL` 和 `SEARXNG_URL` | 設定 Docker 內部網路 URL，讓 Hermes 能透過容器名稱找到其他服務。 |
+| 所有設定檔以真實檔案提供 | docker-compose.yml、Dockerfile、Dockerfile.camofox、config.yaml、.env 都是 repo 中的一般檔案 — 不需要在執行時解碼 base64。下載後直接點兩下即可。 |
+| 啟動時驗證必要檔案 | 檢查五個必要檔案（docker-compose.yml、Dockerfile、Dockerfile.camofox、config.yaml、.env）是否存在。如果遺失會快速失敗並顯示清楚的錯誤訊息。 |
+| 複製 config.yaml 和 .env 到 hermes_data/.hermes/ | 首次執行時將 repo 根目錄的 config.yaml 和 .env 複製到持久化資料目錄，避免首次啟動設定精靈在 Docker 中崩潰。config.yaml 將 approvals 模式設為 `smart`，camofox 設為瀏覽器雲端供應商，配置 managed persistence、visible-tab 工作階段處理及適當的逾時設定 — 讓無頭瀏覽器開箱即用。 |
 | 啟動後修補 SearXNG 設定 | 預設的 SearXNG `settings.yml` 只輸出 HTML。Hermes 需要 `json` 格式才能解析搜尋結果。腳本會拉出設定檔、附加格式設定、推回容器，然後重啟。 |
 
 ---
@@ -244,6 +239,8 @@ None of the base images ship ready for this use case out of the box. Every custo
 ├── docker-compose.yml     ← Docker Compose 服務定義
 ├── Dockerfile             ← Hermes Agent 映像客製化
 ├── Dockerfile.camofox     ← Camofox + noVNC 映像客製化
+├── config.yaml            ← Hermes Agent 設定（複製到 hermes_data/.hermes/）
+├── .env                   ← 環境變數（複製到 hermes_data/.hermes/）
 ├── .dockerignore          ← Docker 建置時排除的檔案
 ├── index.html             ← noVNC 登陸頁面（自動重連）
 ├── hermes_data/           ← 執行時產生（持久化資料）
