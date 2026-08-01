@@ -102,12 +102,19 @@ if %errorlevel% equ 0 (
     echo.
     echo ============================================
     echo   All services started!
-    echo   Dashboard:  http://localhost:9119
-    echo   Camofox:    http://localhost:9377
-    echo   SearXNG:    http://localhost:8888
-    echo   Camofox VNC: http://localhost:6080/vnc_auto.html?autoconnect=true^&reconnect=true
+    echo   Dashboard:       http://localhost:9119
+    echo   Camofox CDP:     http://localhost:9377
+    echo   SearXNG:         http://localhost:8888
+    echo   Camofox VNC:     http://localhost:6080/vnc_auto.html?autoconnect=true^&reconnect=true
+    echo   Hermes Router:   http://localhost:8319
     echo.
-    echo   IMPORTANT: Edit hermes_data\.hermes\.env with your real API key.
+    echo   IMPORTANT: Edit hermes_data\.hermes\.env with your real API keys:
+    echo     - NVIDIA_API_KEY      (for Nemotron models via NVIDIA)
+    echo     - OPENROUTER_API_KEYS (for free models via OpenRouter)
+    echo     - HERMES_ROUTER_API_KEY (for Hermes Agent custom provider)
+    echo.
+    echo   To use free AI quota: In Hermes dashboard -> Models, select "Custom" provider
+    echo   and choose "hermes-router-auto" to route via hermes-router load balancer.
     echo ============================================
     echo.
     echo   Fixing SearXNG settings...
@@ -131,7 +138,7 @@ if %errorlevel% equ 0 (
     echo.
     echo   Common issues and fixes:
     echo   1. Docker Desktop not running - start it and retry.
-    echo   2. Port conflict - check if ports 9119, 9377, 6080, 8888 are in use.
+    echo   2. Port conflict - check if ports 9119, 9377, 6080, 8888, 8319 are in use.
     echo   3. Build failure - check the build output above for errors.
     echo   4. Try running manually: docker compose up --build
     echo ============================================

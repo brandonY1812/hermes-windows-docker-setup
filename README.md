@@ -2,7 +2,7 @@
 
 [English](#hermes-agent--one-click-windows-setup) | [中文](#hermes-agent--windows-一鍵部署)
 
-A Docker Compose stack that boots a full Hermes Agent environment on **Windows 11 x86-64** with one double-click. Three services: the Hermes gateway + dashboard, a headless browser (Camofox with VNC), and a privacy-respecting search engine (SearXNG). Download the whole repo and double-click the `.bat` — it's that simple.
+A Docker Compose stack that boots a full Hermes Agent environment on **Windows 11 x86-64** with one double-click. Four services: the Hermes gateway + dashboard, a headless browser (Camofox with VNC), a privacy-respecting search engine (SearXNG), and an AI API load balancer (Hermes Router). Download the whole repo and double-click the `.bat` — it's that simple.
 
 > **Prerequisite:** [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/) must be installed and running before executing the script.
 
@@ -21,23 +21,24 @@ A Docker Compose stack that boots a full Hermes Agent environment on **Windows 1
 │  └── Patches SearXNG settings, restarts     │
 └─────────────────────────────────────────────┘
                       │
-          ┌───────────┼───────────┐
-          ▼           ▼           ▼
-     ┌─────────┐ ┌─────────┐ ┌──────────┐
-     │ hermes  │ │ camofox │ │ searxng  │
-     │ :9119   │ │ :9377   │ │  :8888   │
-     │         │ │ :6080   │ │          │
-     └─────────┘ └─────────┘ └──────────┘
-        gateway     browser     search
-       dashboard   (VNC web)   engine
+          ┌───────────┼───────────┬────────────┐
+          ▼           ▼           ▼            ▼
+     ┌─────────┐ ┌─────────┐ ┌──────────┐ ┌────────────┐
+     │ hermes  │ │ camofox │ │ searxng  │ │ hermes-    │
+     │ :9119   │ │ :9377   │ │  :8888   │ │ router     │
+     │         │ │ :6080   │ │          │ │ :8319      │
+     └─────────┘ └─────────┘ └──────────┘ └────────────┘
+        gateway     browser     search       AI API
+       dashboard   (VNC web)   engine       load balancer
 ```
 
-| Service  | Port | Description |
-|----------|------|-------------|
-| Hermes   | 9119 | Gateway + web dashboard |
-| Camofox  | 9377 | Headless browser API |
-| Camofox  | 6080 | noVNC web desktop (view the browser) |
-| SearXNG  | 8888 | Privacy metasearch engine |
+| Service      | Port | Description |
+|--------------|------|-------------|
+| Hermes       | 9119 | Gateway + web dashboard |
+| Camofox      | 9377 | Headless browser API (CDP) |
+| Camofox      | 6080 | noVNC web desktop (view the browser) |
+| SearXNG      | 8888 | Privacy metasearch engine |
+| Hermes Router| 8319 | AI API load balancer / proxy |
 
 ---
 
@@ -51,6 +52,7 @@ A Docker Compose stack that boots a full Hermes Agent environment on **Windows 1
    - Login with username **admin** and password **admin** (you can change these in `docker-compose.yml`).
    - On the left sidebar, go to **Keys** and add your LLM API key.
    - Go to **Models** and select the model from your LLM provider.
+   - **To use the free AI quota via hermes-router:** go to **Models**, select `custom:hermes-router` as the provider, and choose `hermes-router-auto` — this routes requests through the hermes-router service which load-balances across NVIDIA and OpenRouter free tiers.
    - Head to **Chat** — you're ready to go.
 6. (Alternative) Edit `hermes_data\.hermes\.env` with your API key for programmatic access.
 
@@ -84,6 +86,7 @@ None of the base images ship ready for this use case out of the box. Every custo
 |--------|--------|
 | Hermes image pinned to `v2026.7.20` | Uses a specific tag instead of `latest` to avoid breaking changes from future image updates. |
 | SearXNG image pinned to `2026.6.29-28d388576` | Same reason — a specific, tested version avoids surprise breakage. |
+| Hermes Router image pinned to `shafiq735/hermes-router:0.7.0` | Pinned version for stability; provides AI API load balancing across multiple providers (NVIDIA, OpenRouter). |
 | `HERMES_DASHBOARD_BASIC_AUTH_USERNAME/PASSWORD` | Secures the dashboard with basic auth (change the password in production). |
 | `mem_limit: 4g` / `cpus: 2.0` | Caps resource usage so Docker doesn't starve the Windows host. |
 | Volume: `.\hermes_data\.hermes:/opt/data` | Persists all configuration, skills, memories, and cron jobs on the Windows filesystem. Survives container rebuilds. |
@@ -96,10 +99,10 @@ None of the base images ship ready for this use case out of the box. Every custo
 
 | Change | Reason |
 |--------|--------|
-| All config files shipped as real files | docker-compose.yml, Dockerfile, and Dockerfile.camofox are regular files in the repo — no base64 decoding at runtime. Just download and double-click. |
-| File verification on startup | Checks that the three required files (docker-compose.yml, Dockerfile, Dockerfile.camofox) exist before building. Fails fast with a clear message if anything is missing. |
-| Auto-generates `config.yaml` | Prevents the first-time setup wizard from crashing inside Docker. Sets approvals mode to `smart` so commands are auto-approved based on heuristics instead of prompting. Configures camofox as the browser cloud provider with managed persistence, visible-tab session handling, and appropriate timeouts — all tuned so the headless browser works out of the box. |
-| Auto-generates `.env` with `CAMOFOX_URL` and `SEARXNG_URL` | Sets the internal Docker network URLs so Hermes can reach the other services by container name. |
+| All config files shipped as real files | docker-compose.yml, Dockerfile, Dockerfile.camofox, config.yaml, and .env are regular files in the repo — no base64 decoding at runtime. Just download and double-click. |
+| File verification on startup | Checks that the five required files (docker-compose.yml, Dockerfile, Dockerfile.camofox, config.yaml, .env) exist before building. Fails fast with a clear message if anything is missing. |
+| Auto-configures hermes-router for free AI quota | By adding your NVIDIA and OpenRouter API keys to `.env`, the hermes-router service automatically load-balances across providers, giving you access to generous free-tier quotas (Nemotron models via NVIDIA, plus free models via OpenRouter) without manual model selection. |
+| Copies config.yaml and .env to hermes_data/.hermes/ | First run copies repo root config.yaml and .env to the persistent data directory, avoiding first-time setup wizard crashes inside Docker. config.yaml sets approvals mode to `smart`, configures camofox as the browser cloud provider with managed persistence, visible-tab session handling, and appropriate timeouts — all tuned so the headless browser works out of the box. |
 | Post-start SearXNG settings patch | The default SearXNG `settings.yml` only outputs HTML. Hermes needs the `json` format to parse search results. The script pulls the config, appends the format, pushes it back, and restarts. |
 
 ---
@@ -130,7 +133,7 @@ None of the base images ship ready for this use case out of the box. Every custo
 
 [English](#hermes-agent--one-click-windows-setup) | [中文](#hermes-agent--windows-一鍵部署)
 
-一個 Docker Compose 環境，在 **Windows 11 x86-64** 上點兩下就能啟動完整的 Hermes Agent 系統。包含三個服務：Hermes 閘道器 + 儀表板、無頭瀏覽器（Camofox + VNC 遠端桌面），以及尊重隱私的搜尋引擎（SearXNG）。下載整個 repo，點兩下 `.bat` 即可執行。
+一個 Docker Compose 環境，在 **Windows 11 x86-64** 上點兩下就能啟動完整的 Hermes Agent 系統。包含四個服務：Hermes 閘道器 + 儀表板、無頭瀏覽器（Camofox + VNC 遠端桌面）、尊重隱私的搜尋引擎（SearXNG），以及 AI API 負載平衡器（Hermes Router）。下載整個 repo，點兩下 `.bat` 即可執行。
 
 > **前置需求：** 執行腳本前，必須先安裝並啟動 [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/)。
 
@@ -149,23 +152,24 @@ None of the base images ship ready for this use case out of the box. Every custo
 │  └── 修補 SearXNG 設定後重啟                 │
 └─────────────────────────────────────────────┘
                       │
-          ┌───────────┼───────────┐
-          ▼           ▼           ▼
-     ┌─────────┐ ┌─────────┐ ┌──────────┐
-     │ hermes  │ │ camofox │ │ searxng  │
-     │ :9119   │ │ :9377   │ │  :8888   │
-     │         │ │ :6080   │ │          │
-     └─────────┘ └─────────┘ └──────────┘
-       閘道器      瀏覽器      搜尋引擎
-       儀表板     (VNC 網頁)
+          ┌───────────┼───────────┬────────────┐
+          ▼           ▼           ▼            ▼
+     ┌─────────┐ ┌─────────┐ ┌──────────┐ ┌────────────┐
+     │ hermes  │ │ camofox │ │ searxng  │ │ hermes-    │
+     │ :9119   │ │ :9377   │ │  :8888   │ │ router     │
+     │         │ │ :6080   │ │          │ │ :8319      │
+     └─────────┘ └─────────┘ └──────────┘ └────────────┘
+       閘道器      瀏覽器      搜尋引擎       AI API
+       儀表板     (VNC 網頁)                 負載平衡器
 ```
 
-| 服務     | 埠號 | 說明 |
-|----------|------|------|
-| Hermes   | 9119 | 閘道器 + 網頁儀表板 |
-| Camofox  | 9377 | 無頭瀏覽器 API |
-| Camofox  | 6080 | noVNC 網頁遠端桌面（查看瀏覽器畫面） |
-| SearXNG  | 8888 | 隱私保護的元搜尋引擎 |
+| 服務         | 埠號 | 說明 |
+|--------------|------|------|
+| Hermes       | 9119 | 閘道器 + 網頁儀表板 |
+| Camofox      | 9377 | 無頭瀏覽器 API (CDP) |
+| Camofox      | 6080 | noVNC 網頁遠端桌面（查看瀏覽器畫面） |
+| SearXNG      | 8888 | 隱私保護的元搜尋引擎 |
+| Hermes Router| 8319 | AI API 負載平衡器 / 代理 |
 
 ---
 
@@ -179,6 +183,7 @@ None of the base images ship ready for this use case out of the box. Every custo
    - 使用使用者名稱 **admin** 和密碼 **admin** 登入（可以在 `docker-compose.yml` 中修改）。
    - 在左側選單中，前往 **Keys** 並新增你的 LLM API 金鑰。
    - 前往 **Models**，從你的 LLM 供應商中選擇模型。
+   - **若要使用 hermes-router 的免費 AI 配額：** 前往 **Models**，選擇 `custom:hermes-router` 作為供應商，並選擇 `hermes-router-auto` — 這會將請求路由到 hermes-router 服務，自動在 NVIDIA 和 OpenRouter 的免費額度間負載平衡。
    - 前往 **Chat** — 就可以開始使用了。
 6. （替代方式）編輯 `hermes_data\.hermes\.env` 以寫入 API 金鑰，供程式化存取使用。
 
@@ -212,6 +217,7 @@ None of the base images ship ready for this use case out of the box. Every custo
 |--------|--------|
 | Hermes 映像固定為 `v2026.7.20` | 使用特定標籤而非 `latest`，避免未來映像更新造成相容性問題。 |
 | SearXNG 映像固定為 `2026.6.29-28d388576` | 同樣原因 — 使用經測試的特定版本，避免意外故障。 |
+| Hermes Router 映像固定為 `shafiq735/hermes-router:0.7.0` | 固定版本以確保穩定性；提供 AI API 負載平衡，支援多供應商（NVIDIA、OpenRouter）。 |
 | `HERMES_DASHBOARD_BASIC_AUTH_USERNAME/PASSWORD` | 以基本驗證保護儀表板（請在正式環境中修改密碼）。 |
 | `mem_limit: 4g` / `cpus: 2.0` | 限制資源用量，避免 Docker 佔滿 Windows 主機的資源。 |
 | 磁碟區：`.\hermes_data\.hermes:/opt/data` | 將所有設定、技能、記憶與排程保存在 Windows 檔案系統上。重建容器後資料不會遺失。 |
@@ -226,6 +232,7 @@ None of the base images ship ready for this use case out of the box. Every custo
 |--------|--------|
 | 所有設定檔以真實檔案提供 | docker-compose.yml、Dockerfile、Dockerfile.camofox、config.yaml、.env 都是 repo 中的一般檔案 — 不需要在執行時解碼 base64。下載後直接點兩下即可。 |
 | 啟動時驗證必要檔案 | 檢查五個必要檔案（docker-compose.yml、Dockerfile、Dockerfile.camofox、config.yaml、.env）是否存在。如果遺失會快速失敗並顯示清楚的錯誤訊息。 |
+| 自動設定 hermes-router 以獲得免費 AI 配額 | 只要在 `.env` 中加入 NVIDIA 和 OpenRouter API 金鑰，hermes-router 服務就會自動跨供應商負載平衡，讓你獲得慷慨的免費額度（透過 NVIDIA 的 Nemotron 模型，加上 OpenRouter 的免費模型），無需手動選擇模型。 |
 | 複製 config.yaml 和 .env 到 hermes_data/.hermes/ | 首次執行時將 repo 根目錄的 config.yaml 和 .env 複製到持久化資料目錄，避免首次啟動設定精靈在 Docker 中崩潰。config.yaml 將 approvals 模式設為 `smart`，camofox 設為瀏覽器雲端供應商，配置 managed persistence、visible-tab 工作階段處理及適當的逾時設定 — 讓無頭瀏覽器開箱即用。 |
 | 啟動後修補 SearXNG 設定 | 預設的 SearXNG `settings.yml` 只輸出 HTML。Hermes 需要 `json` 格式才能解析搜尋結果。腳本會拉出設定檔、附加格式設定、推回容器，然後重啟。 |
 

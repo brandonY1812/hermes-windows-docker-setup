@@ -23,3 +23,8 @@ browser:
     loopback_host_alias: host.docker.internal
   cloud_provider: camofox
   use_gateway: false
+custom_providers:
+  - name: custom:hermes-router
+    base_url: http://hermes-router:8319/v1
+    api_key: ${HERMES_ROUTER_API_KEY}
+    model: hermes-router-auto

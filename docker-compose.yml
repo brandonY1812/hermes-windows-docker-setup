@@ -78,6 +78,29 @@ services:
       - .\searxng:/etc/searxng:rw       # Persist settings across restarts
     networks:
       - hermes_net
+      
+  # ---------------------------------------------------------------------------
+  # hermes-router — AI API load balancer
+  # ---------------------------------------------------------------------------      
+  hermes-router:
+    image: shafiq735/hermes-router:0.7.0
+    restart: unless-stopped
+    ports:
+      - "8319:8319"
+    environment:
+      - PROXY_API_KEYS=sk-my-router-key-1
+      - OPENROUTER_API_KEYS=sk-or-key1,sk-or-key2
+      - NVIDIA_API_KEY=sk-my-router-key-1
+      - OPENROUTER_MODEL=nvidia/nemotron-3-ultra-550b-a55b,nvidia/nemotron-3-super-120b-a12b:free
+      - NVIDIA_MODEL=nvidia/nemotron-3-ultra-550b-a55b,deepseek-ai/deepseek-v4-pro
+    healthcheck:
+      # python:3.12-slim ships without curl/wget — probe with the stdlib instead
+      test: ["CMD", "python", "-c", "import os,urllib.request; urllib.request.urlopen(f\"http://localhost:{os.environ.get('PORT','8319')}/health\")"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - hermes_net
 
 # ---------------------------------------------------------------------------
 # Shared bridge network so services can reach each other by container name
