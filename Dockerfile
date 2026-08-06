@@ -6,7 +6,7 @@
 # =============================================================================
 
 # 1. Pull the official, ready-made pre-compiled image directly
-FROM nousresearch/hermes-agent:v2026.7.20
+FROM nousresearch/hermes-agent:v2026.7.30
 
 # 2. Briefly switch to root to install system-level packages
 USER root
