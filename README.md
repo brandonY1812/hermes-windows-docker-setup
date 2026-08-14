@@ -1,10 +1,10 @@
-# Hermes Agent — One-Click Windows Setup
+# Hermes Agent — One-Click Windows & macOS Setup
 
-[English](#hermes-agent--one-click-windows-setup) | [中文](#hermes-agent--windows-一鍵部署)
+[English](#hermes-agent--one-click-windows--macos-setup) | [中文](#hermes-agent--windows--macos-一鍵部署)
 
-A Docker Compose stack that boots a full Hermes Agent environment on **Windows 11 x86-64** with one double-click. Four services: the Hermes gateway + dashboard, a headless browser (Camofox with VNC), a privacy-respecting search engine (SearXNG), and an AI API load balancer (Hermes Router). Download the whole repo and double-click the `.bat` — it's that simple.
+A Docker Compose stack that boots a full Hermes Agent environment on **Windows 11** or **macOS**. Four services: the Hermes gateway + dashboard, a headless browser (Camofox with VNC), a privacy-respecting search engine (SearXNG), and an AI API load balancer (Hermes Router). Download the whole repo, then double-click the Windows `.bat` or run the macOS shell script.
 
-> **Prerequisite:** [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/) must be installed and running before executing the script.
+> **Prerequisite:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) for Windows or macOS must be installed and running before executing the setup script.
 
 ---
 
@@ -12,7 +12,7 @@ A Docker Compose stack that boots a full Hermes Agent environment on **Windows 1
 
 ```
 ┌─────────────────────────────────────────────┐
-│  setup-hermes.bat  (double-click to run)    │
+│  setup-hermes.bat / setup-hermes.sh         │
 │  ├── Checks Docker is installed & running   │
 │  ├── Creates data directories               │
 │  ├── Generates default config.yaml + .env   │
@@ -44,17 +44,36 @@ A Docker Compose stack that boots a full Hermes Agent environment on **Windows 1
 
 ## How to use
 
+### Windows
+
 1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) for Windows.
 2. Start Docker Desktop and wait until it's ready.
 3. Download the whole repository (all files, not just the `.bat`) — either `git clone` or download the ZIP from GitHub and extract it.
 4. Double-click `setup-hermes.bat`.
-5. After the build finishes, open http://localhost:9119 in your browser.
+
+### macOS
+
+1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) for Mac.
+2. Start Docker Desktop and wait until it's ready.
+3. Clone the repository or download and extract the ZIP.
+4. Open Terminal in the repository directory, then run:
+
+   ```bash
+   chmod +x setup-hermes.sh
+   ./setup-hermes.sh
+   ```
+
+The Docker images used by the stack are available for both Intel (`amd64`) and Apple Silicon (`arm64`) Macs.
+
+### Finish setup
+
+1. After the build finishes, open http://localhost:9119 in your browser.
    - Login with username **admin** and password **admin** (you can change these in `docker-compose.yml`).
    - On the left sidebar, go to **Keys** and add your LLM API key.
    - Go to **Models** and select the model from your LLM provider.
    - **To use the free AI quota via hermes-router:** go to **Models**, select `custom:hermes-router` as the provider, and choose `hermes-router-auto` — this routes requests through the hermes-router service which load-balances across NVIDIA and OpenRouter free tiers.
    - Head to **Chat** — you're ready to go.
-6. (Alternative) Edit `hermes_data\.hermes\.env` with your API key for programmatic access.
+2. (Alternative) Edit `hermes_data/.hermes/.env` with your API key for programmatic access.
 
 To stop: `docker compose down`  
 To see logs: `docker compose logs -f hermes`  
@@ -66,7 +85,7 @@ To restart: `docker compose up -d`
 
 None of the base images ship ready for this use case out of the box. Every customization below exists to solve a real problem that blocked the stack from working.
 
-### Dockerfile — builds on `nousresearch/hermes-agent:v2026.7.20`
+### Dockerfile — builds on `nousresearch/hermes-agent:v2026.7.30`
 
 | Change | Reason |
 |--------|--------|
@@ -84,22 +103,23 @@ None of the base images ship ready for this use case out of the box. Every custo
 
 | Change | Reason |
 |--------|--------|
-| Hermes image pinned to `v2026.7.20` | Uses a specific tag instead of `latest` to avoid breaking changes from future image updates. |
+| Hermes image pinned to `v2026.7.30` | Uses a specific tag instead of `latest` to avoid breaking changes from future image updates. |
 | SearXNG image pinned to `2026.6.29-28d388576` | Same reason — a specific, tested version avoids surprise breakage. |
 | Hermes Router image pinned to `shafiq735/hermes-router:0.7.0` | Pinned version for stability; provides AI API load balancing across multiple providers (NVIDIA, OpenRouter). |
 | `HERMES_DASHBOARD_BASIC_AUTH_USERNAME/PASSWORD` | Secures the dashboard with basic auth (change the password in production). |
 | `mem_limit: 4g` / `cpus: 2.0` | Caps resource usage so Docker doesn't starve the Windows host. |
-| Volume: `.\hermes_data\.hermes:/opt/data` | Persists all configuration, skills, memories, and cron jobs on the Windows filesystem. Survives container rebuilds. |
-| Volume: `.\hermes_data\downloads:/opt/downloads` | Shared download directory between hermes and camofox (browser downloads land here). |
-| Volume: `.\hermes_data\.camofox-docker:/root/.camofox` | Persists camofox browser profiles and session data. |
+| Volume: `./hermes_data/.hermes:/opt/data` | Persists all configuration, skills, memories, and cron jobs on the host filesystem. Survives container rebuilds. |
+| Volume: `./hermes_data/downloads:/opt/downloads` | Shared download directory between hermes and camofox (browser downloads land here). |
+| Volume: `./hermes_data/.camofox-docker:/root/.camofox` | Persists camofox browser profiles and session data. |
 | `depends_on` with `condition: service_started` | Hermes won't start until camofox and searxng are up, avoiding startup race conditions. |
 | `command: ["gateway", "run"]` | Overrides the default entrypoint to start the gateway (not the TUI). |
 
-### setup-hermes.bat
+### Setup scripts
 
 | Change | Reason |
 |--------|--------|
-| All config files shipped as real files | docker-compose.yml, Dockerfile, Dockerfile.camofox, config.yaml, and .env are regular files in the repo — no base64 decoding at runtime. Just download and double-click. |
+| Native Windows and macOS entry points | Use `setup-hermes.bat` on Windows or `setup-hermes.sh` on macOS. |
+| All config files shipped as real files | docker-compose.yml, Dockerfile, Dockerfile.camofox, config.yaml, and .env are regular files in the repo — no base64 decoding at runtime. |
 | File verification on startup | Checks that the five required files (docker-compose.yml, Dockerfile, Dockerfile.camofox, config.yaml, .env) exist before building. Fails fast with a clear message if anything is missing. |
 | Auto-configures hermes-router for free AI quota | By adding your NVIDIA and OpenRouter API keys to `.env`, the hermes-router service automatically load-balances across providers, giving you access to generous free-tier quotas (Nemotron models via NVIDIA, plus free models via OpenRouter) without manual model selection. |
 | Copies config.yaml and .env to hermes_data/.hermes/ | First run copies repo root config.yaml and .env to the persistent data directory, avoiding first-time setup wizard crashes inside Docker. config.yaml sets approvals mode to `smart`, configures camofox as the browser cloud provider with managed persistence, visible-tab session handling, and appropriate timeouts — all tuned so the headless browser works out of the box. |
@@ -112,6 +132,7 @@ None of the base images ship ready for this use case out of the box. Every custo
 ```
 .
 ├── setup-hermes.bat       ← Double-click this (one-click bootstrap)
+├── setup-hermes.sh        ← Run this on macOS
 ├── docker-compose.yml     ← Docker Compose service definitions
 ├── Dockerfile             ← Hermes Agent image customizations
 ├── Dockerfile.camofox     ← Camofox + noVNC image customizations
@@ -129,13 +150,13 @@ None of the base images ship ready for this use case out of the box. Every custo
 
 ---
 
-# Hermes Agent — Windows 一鍵部署
+# Hermes Agent — Windows & macOS 一鍵部署
 
-[English](#hermes-agent--one-click-windows-setup) | [中文](#hermes-agent--windows-一鍵部署)
+[English](#hermes-agent--one-click-windows--macos-setup) | [中文](#hermes-agent--windows--macos-一鍵部署)
 
-一個 Docker Compose 環境，在 **Windows 11 x86-64** 上點兩下就能啟動完整的 Hermes Agent 系統。包含四個服務：Hermes 閘道器 + 儀表板、無頭瀏覽器（Camofox + VNC 遠端桌面）、尊重隱私的搜尋引擎（SearXNG），以及 AI API 負載平衡器（Hermes Router）。下載整個 repo，點兩下 `.bat` 即可執行。
+一個 Docker Compose 環境，可在 **Windows 11** 或 **macOS** 上啟動完整的 Hermes Agent 系統。包含四個服務：Hermes 閘道器 + 儀表板、無頭瀏覽器（Camofox + VNC 遠端桌面）、尊重隱私的搜尋引擎（SearXNG），以及 AI API 負載平衡器（Hermes Router）。下載整個 repo，在 Windows 點兩下 `.bat`，或在 macOS 執行 shell 腳本即可。
 
-> **前置需求：** 執行腳本前，必須先安裝並啟動 [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/)。
+> **前置需求：** 執行腳本前，必須先安裝並啟動 Windows 或 macOS 版 [Docker Desktop](https://www.docker.com/products/docker-desktop/)。
 
 ---
 
@@ -143,7 +164,7 @@ None of the base images ship ready for this use case out of the box. Every custo
 
 ```
 ┌─────────────────────────────────────────────┐
-│  setup-hermes.bat  （點兩下執行）            │
+│  setup-hermes.bat / setup-hermes.sh          │
 │  ├── 檢查 Docker 是否已安裝並執行中          │
 │  ├── 建立資料目錄                            │
 │  ├── 產生預設 config.yaml + .env            │
@@ -175,17 +196,36 @@ None of the base images ship ready for this use case out of the box. Every custo
 
 ## 使用方法
 
+### Windows
+
 1. 安裝 [Docker Desktop](https://www.docker.com/products/docker-desktop/) for Windows。
 2. 啟動 Docker Desktop，等待它就緒。
 3. 從 GitHub 下載整個 repository（所有檔案，不只是 `.bat`）— 可以用 `git clone` 或下載 ZIP 後解壓縮。
 4. 點兩下 `setup-hermes.bat`。
-5. 建置完成後，在瀏覽器中開啟 http://localhost:9119。
+
+### macOS
+
+1. 安裝 [Docker Desktop](https://www.docker.com/products/docker-desktop/) for Mac。
+2. 啟動 Docker Desktop，等待它就緒。
+3. Clone repository，或下載 ZIP 後解壓縮。
+4. 在 repository 目錄中開啟「終端機」，然後執行：
+
+   ```bash
+   chmod +x setup-hermes.sh
+   ./setup-hermes.sh
+   ```
+
+此環境使用的 Docker 映像同時支援 Intel (`amd64`) 與 Apple Silicon (`arm64`) Mac。
+
+### 完成設定
+
+1. 建置完成後，在瀏覽器中開啟 http://localhost:9119。
    - 使用使用者名稱 **admin** 和密碼 **admin** 登入（可以在 `docker-compose.yml` 中修改）。
    - 在左側選單中，前往 **Keys** 並新增你的 LLM API 金鑰。
    - 前往 **Models**，從你的 LLM 供應商中選擇模型。
    - **若要使用 hermes-router 的免費 AI 配額：** 前往 **Models**，選擇 `custom:hermes-router` 作為供應商，並選擇 `hermes-router-auto` — 這會將請求路由到 hermes-router 服務，自動在 NVIDIA 和 OpenRouter 的免費額度間負載平衡。
    - 前往 **Chat** — 就可以開始使用了。
-6. （替代方式）編輯 `hermes_data\.hermes\.env` 以寫入 API 金鑰，供程式化存取使用。
+2. （替代方式）編輯 `hermes_data/.hermes/.env` 以寫入 API 金鑰，供程式化存取使用。
 
 停止：`docker compose down`  
 查看日誌：`docker compose logs -f hermes`  
@@ -197,7 +237,7 @@ None of the base images ship ready for this use case out of the box. Every custo
 
 基礎映像檔都不會針對這個使用情境預先設定好。以下每一項客製化都是為了解決一個實際會阻礙系統運作的問題。
 
-### Dockerfile — 基於 `nousresearch/hermes-agent:v2026.7.20` 構建
+### Dockerfile — 基於 `nousresearch/hermes-agent:v2026.7.30` 構建
 
 | 變更 | 原因 |
 |--------|--------|
@@ -215,22 +255,23 @@ None of the base images ship ready for this use case out of the box. Every custo
 
 | 變更 | 原因 |
 |--------|--------|
-| Hermes 映像固定為 `v2026.7.20` | 使用特定標籤而非 `latest`，避免未來映像更新造成相容性問題。 |
+| Hermes 映像固定為 `v2026.7.30` | 使用特定標籤而非 `latest`，避免未來映像更新造成相容性問題。 |
 | SearXNG 映像固定為 `2026.6.29-28d388576` | 同樣原因 — 使用經測試的特定版本，避免意外故障。 |
 | Hermes Router 映像固定為 `shafiq735/hermes-router:0.7.0` | 固定版本以確保穩定性；提供 AI API 負載平衡，支援多供應商（NVIDIA、OpenRouter）。 |
 | `HERMES_DASHBOARD_BASIC_AUTH_USERNAME/PASSWORD` | 以基本驗證保護儀表板（請在正式環境中修改密碼）。 |
 | `mem_limit: 4g` / `cpus: 2.0` | 限制資源用量，避免 Docker 佔滿 Windows 主機的資源。 |
-| 磁碟區：`.\hermes_data\.hermes:/opt/data` | 將所有設定、技能、記憶與排程保存在 Windows 檔案系統上。重建容器後資料不會遺失。 |
-| 磁碟區：`.\hermes_data\downloads:/opt/downloads` | hermes 與 camofox 共用的下載目錄（瀏覽器下載的檔案會存在這裡）。 |
-| 磁碟區：`.\hermes_data\.camofox-docker:/root/.camofox` | 保存 camofox 瀏覽器的設定檔與工作階段資料。 |
+| 磁碟區：`./hermes_data/.hermes:/opt/data` | 將所有設定、技能、記憶與排程保存在主機檔案系統上。重建容器後資料不會遺失。 |
+| 磁碟區：`./hermes_data/downloads:/opt/downloads` | hermes 與 camofox 共用的下載目錄（瀏覽器下載的檔案會存在這裡）。 |
+| 磁碟區：`./hermes_data/.camofox-docker:/root/.camofox` | 保存 camofox 瀏覽器的設定檔與工作階段資料。 |
 | `depends_on` 搭配 `condition: service_started` | Hermes 會等到 camofox 和 searxng 都啟動後才開始，避免啟動競爭條件。 |
 | `command: ["gateway", "run"]` | 覆蓋預設進入點，改為啟動閘道器（而非 TUI）。 |
 
-### setup-hermes.bat
+### 設定腳本
 
 | 變更 | 原因 |
 |--------|--------|
-| 所有設定檔以真實檔案提供 | docker-compose.yml、Dockerfile、Dockerfile.camofox、config.yaml、.env 都是 repo 中的一般檔案 — 不需要在執行時解碼 base64。下載後直接點兩下即可。 |
+| 原生 Windows 與 macOS 入口 | Windows 使用 `setup-hermes.bat`，macOS 使用 `setup-hermes.sh`。 |
+| 所有設定檔以真實檔案提供 | docker-compose.yml、Dockerfile、Dockerfile.camofox、config.yaml、.env 都是 repo 中的一般檔案 — 不需要在執行時解碼 base64。 |
 | 啟動時驗證必要檔案 | 檢查五個必要檔案（docker-compose.yml、Dockerfile、Dockerfile.camofox、config.yaml、.env）是否存在。如果遺失會快速失敗並顯示清楚的錯誤訊息。 |
 | 自動設定 hermes-router 以獲得免費 AI 配額 | 只要在 `.env` 中加入 NVIDIA 和 OpenRouter API 金鑰，hermes-router 服務就會自動跨供應商負載平衡，讓你獲得慷慨的免費額度（透過 NVIDIA 的 Nemotron 模型，加上 OpenRouter 的免費模型），無需手動選擇模型。 |
 | 複製 config.yaml 和 .env 到 hermes_data/.hermes/ | 首次執行時將 repo 根目錄的 config.yaml 和 .env 複製到持久化資料目錄，避免首次啟動設定精靈在 Docker 中崩潰。config.yaml 將 approvals 模式設為 `smart`，camofox 設為瀏覽器雲端供應商，配置 managed persistence、visible-tab 工作階段處理及適當的逾時設定 — 讓無頭瀏覽器開箱即用。 |
@@ -243,6 +284,7 @@ None of the base images ship ready for this use case out of the box. Every custo
 ```
 .
 ├── setup-hermes.bat       ← 點兩下這個（一鍵啟動腳本）
+├── setup-hermes.sh        ← 在 macOS 執行這個腳本
 ├── docker-compose.yml     ← Docker Compose 服務定義
 ├── Dockerfile             ← Hermes Agent 映像客製化
 ├── Dockerfile.camofox     ← Camofox + noVNC 映像客製化

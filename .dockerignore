@@ -8,3 +8,4 @@ camofox-browser/    # Binary downloads — not needed at build time
 dist/                # Build artifacts — rebuilt inside the image
 .git/                # Git history — irrelevant to the container
 *.bat                # Windows batch scripts — not used inside Linux containers
+setup-hermes.sh      # macOS bootstrap — not used inside Linux containers
