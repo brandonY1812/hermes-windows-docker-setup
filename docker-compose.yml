@@ -7,7 +7,7 @@
 #   searxng  — Privacy-respecting search engine (web UI on 8888)
 #
 # All services share a bridge network (hermes_net) and persist data under
-# .\hermes_data\ and .\searxng\ on the Windows host.
+# ./hermes_data/ and ./searxng/ on the host.
 # =============================================================================
 
 services:
@@ -31,8 +31,8 @@ services:
       - HERMES_DASHBOARD_BASIC_AUTH_USERNAME=admin       # Basic auth username for dashboard
       - HERMES_DASHBOARD_BASIC_AUTH_PASSWORD=admin       # Basic auth password (change in production!)
     volumes:
-      - .\hermes_data\.hermes:/opt/data                  # Agent state: config, skills, memories, cron
-      - .\hermes_data\downloads:/opt/downloads           # Shared downloads folder
+      - ./hermes_data/.hermes:/opt/data                  # Agent state: config, skills, memories, cron
+      - ./hermes_data/downloads:/opt/downloads           # Shared downloads folder
     networks:
       - hermes_net
     depends_on:
@@ -60,8 +60,8 @@ services:
       - VNC_RESOLUTION=1920x1080        # Browser viewport resolution
       - CAMOFOX_HEADLESS=virtual        # Use Xvfb virtual display
     volumes:
-      - .\hermes_data\.camofox-docker:/root/.camofox    # Browser profile + sessions
-      - .\hermes_data\downloads:/tmp                    # Shared downloads (maps to Hermes)
+      - ./hermes_data/.camofox-docker:/root/.camofox    # Browser profile + sessions
+      - ./hermes_data/downloads:/tmp                    # Shared downloads (maps to Hermes)
     networks:
       - hermes_net
 
@@ -75,7 +75,7 @@ services:
     ports:
       - "8888:8080"                     # Web UI (host:container)
     volumes:
-      - .\searxng:/etc/searxng:rw       # Persist settings across restarts
+      - ./searxng:/etc/searxng:rw       # Persist settings across restarts
     networks:
       - hermes_net
       
